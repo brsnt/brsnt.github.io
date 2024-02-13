@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify
 import os
 import discord
 from dotenv import load_dotenv
+from werkzeug.exceptions import BadRequest
 
 load_dotenv()
 TOKEN = os.getenv('MTIwNjk5NjgwNDA3MjI1MTM5Mg.GJumAI.HTDpo-0w7mBGdz9laWn_HM7ousQJQSjGXdbIIs')
@@ -12,24 +13,28 @@ CHANNEL_ID = os.getenv('1206998630796365836')
 client = discord.Client()
 app = Flask(__name__)
 
-@app.route('/', methods=['GET', 'POST'] )
+@app.route('/', methods=['GET', 'POST'])
 def upload_file():
-    if request.method == 'POST':
-        file = request.files['file']
-        file.save(file.filename)
-        send_to_discord(file.filename)
-        os.remove(file.filename)
-        return jsonify({'message': 'File successfully uploaded and sent to Discord.'}), 200
-    return '''
-    <!doctype html>
-    <title>Upload File to Discord Bot</title>
-    <h1>Upload a file to send to Discord</h1>
-    <form method=post enctype=multipart/form-data>
-      <input type=file name=file>
-      <input type=submit value=Upload>
-    </form>
-    '''
-
+    try:
+        if request.method == 'POST':
+            file = request.files['file']
+            file.save(file.filename)
+            send_to_discord(file.filename)
+            os.remove(file.filename)
+            return jsonify({'message': 'File successfully uploaded and sent to Discord.'}), 200
+        return '''
+        <!doctype html>
+        <title>Upload File to Discord Bot</title>
+        <h1>Upload a file to send to Discord</h1>
+        <form method=post enctype=multipart/form-data>
+          <input type=file name=file>
+          <input type=submit value=Upload>
+        </form>
+        '''
+    except Exception as e:
+        print(f'Error: {str(e)}')
+        return jsonify({'message': 'An error occurred while processing the request.'}), 500
+        
 @client.event
 async def on_ready():
     guild = discord.utils.get(client.guilds, name=GUILD)
